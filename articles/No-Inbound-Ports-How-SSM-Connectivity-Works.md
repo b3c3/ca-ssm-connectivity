@@ -1,44 +1,20 @@
 # No Inbound Ports Needed — How SSM Connectivity Works
 
-> Primary draft · Part A (LinkedIn) + Part B (Medium)  
-> Status: draft · May 2026
+> Concept article · Medium / long form  
+> Status: draft · May 2026  
+> **LinkedIn draft:** [No-Inbound-Ports-How-SSM-Connectivity-Works-LinkedIn.md](No-Inbound-Ports-How-SSM-Connectivity-Works-LinkedIn.md)
 
 ---
 
-## Part A — LinkedIn
+## What this article is — and is not
 
-**Post headline (first line):**  
-No inbound ports needed — here's how AWS Session Manager actually connects.
+**This article explains *how* Session Manager connectivity works** — why “no inbound ports” is possible, who talks to whom, and how your click on **Connect** fits together with outbound traffic from the instance.
 
----
+**It does *not* walk you through enabling Session Manager in AWS** (IAM roles, instance profiles, which boxes to tick in the console, or VPC endpoints). For that, use the companion draft **[Setup Session Manager on EC2 — Basics](Setup-Session-Manager-EC2-Basics.md)**.
 
-"If it's outbound-only, why do I have to click **Connect**?"
-
-That's the number one question I hear about AWS Systems Manager Session Manager. It sounds like a contradiction. It isn't.
-
-**The old way (SSH):**  
-You knock on the server's front door — Port 22. The door has to be open. If your security group blocks inbound traffic, you're locked out.
-
-**The Session Manager way:**  
-The SSM Agent on your instance is like a receptionist who keeps calling "central dispatch" (AWS) to ask if anyone's waiting. When you click Connect, you're not knocking on the instance. You're telling AWS: "I'd like a session with this server." The next time the agent checks in, AWS says: "Someone's waiting — open a secure line back to me."
-
-**What you get:**
-
-- No inbound ports (no Port 22 or 3389 wide open)
-- No SSH keys on your laptop to lose or rotate
-- Access controlled through IAM — who can connect, and to which instances
-
-The instance dials out. You never need a listener on the public internet.
-
-I wrote a short, beginner-friendly walkthrough on Medium — the receptionist analogy, what really happens when you click Connect, and the one network requirement people forget.
-
-Read the full piece here: [Link to Medium article]
-
-#AWS #CloudSecurity #DevOps #SystemsManager #EC2
+If you already understand the idea but need **routing, security groups, and VPC endpoints** by scenario, see **[Session Manager Network Scenarios (Advanced)](Session-Manager-Network-Scenarios-Advanced.md)**.
 
 ---
-
-## Part B — Medium
 
 **Title:** No Inbound Ports Needed — How SSM Connectivity Works
 
@@ -168,7 +144,7 @@ Outbound-only doesn't mean "no network requirements." The instance still needs a
 
 If the agent can't reach AWS, clicking Connect won't help — dispatch never reaches the receptionist. Plan outbound connectivity (or endpoints) the same way you'd plan any other AWS integration.
 
-You'll also need the agent **installed and running**, and the instance must have an **IAM role** that allows it to talk to Systems Manager. Those are setup topics, not magic — but they're prerequisites.
+You'll also need the agent **installed and running**, and the instance must have an **IAM role** that allows it to talk to Systems Manager. Those are **implementation details**, covered in **[Setup Session Manager on EC2 — Basics](Setup-Session-Manager-EC2-Basics.md)** — not the focus of this piece.
 
 ---
 
@@ -202,7 +178,7 @@ If the "outbound-only but I click Connect" puzzle was nagging you, you're not al
 ---
 
 <!-- Publishing notes
-LinkedIn: copy Part A only; paste Medium URL when live
-Medium: copy from Subtitle through Takeaway; add tags: AWS, Security, DevOps, EC2, Systems Manager
-Mermaid sequence diagram included in Part B (Medium supports Mermaid in many editors; export as image if the editor does not render it)
+Medium: copy from Title through Takeaway; add tags: AWS, Security, DevOps, EC2, Systems Manager
+Mermaid sequence diagram included (Medium may need export from mermaid.live if unsupported)
+LinkedIn: use No-Inbound-Ports-How-SSM-Connectivity-Works-LinkedIn.md
 -->
