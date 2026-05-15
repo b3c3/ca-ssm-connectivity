@@ -74,13 +74,13 @@ Imagine a high-security building. You walk up to the front door and knock. The b
 
 **Session Manager (SSM)**
 
-Now imagine a **receptionist inside** the building. They don't wait at the door. Every few seconds they call **central dispatch** (the AWS Systems Manager service): "Any messages for me?"
+Now imagine a **receptionist inside** the building — the **SSM Agent** on your instance:
 
-When you want a session, you don't knock on the building. You call dispatch yourself — through the AWS Console or CLI. You say: "I'd like to talk to **this** instance."
-
-Dispatch doesn't break into the building. It waits until the receptionist checks in again, then says: "Yes — someone's waiting. Open a secure line back to me **right now**."
-
-The receptionist (the **SSM Agent** on your instance) initiates that line **outward**, over HTTPS — the same kind of encrypted traffic browsers use. Your security group never needs an inbound rule for SSH or RDP just so you can get a shell.
+- **The agent keeps checking in.** They don't wait at the door. Every few seconds they call **central dispatch** (the AWS Systems Manager service): "Any messages for me?"
+- **You ask dispatch, not the building.** When you want a session, you don't knock on the instance. You call dispatch yourself — through the AWS Console or CLI: "I'd like to talk to **this** instance."
+- **Dispatch waits for the next check-in.** It doesn't break into the building. When the receptionist calls again, dispatch says: "Yes — someone's waiting. Open a secure line back to me **right now**."
+- **The agent opens the line outward.** The receptionist initiates an encrypted connection over HTTPS — the same kind of traffic browsers use — back to AWS.
+- **No inbound door required.** Your security group never needs a rule for SSH or RDP just so you can get a shell.
 
 That's the core idea people call a **reverse tunnel**: the server is the **dialer**, not the listener.
 
@@ -99,6 +99,42 @@ You don't need to memorise API names. The flow is simple:
 4. **The agent calls home again** — For the actual shell traffic, the agent opens another **outbound** encrypted connection to AWS. No inbound port on your instance is required for you to type commands.
 
 5. **You're in the middle, via AWS** — Your keyboard and screen talk to AWS; AWS relays traffic through the tunnel the agent opened. You're not typing directly onto the instance's network interface the way SSH clients do.
+
+The sequence below matches the receptionist analogy and the five steps above. Notice every network connection **from the instance** goes **outbound** to AWS — never inbound from the internet to your instance.
+
+```mermaid
+sequenceDiagram
+    participant You
+    participant Dispatch as AWS Session Manager<br/>(central dispatch)
+    participant Agent as SSM Agent<br/>(receptionist on instance)
+
+    rect rgb(240, 248, 255)
+        note over Agent, Dispatch: Ongoing — agent checks in outbound
+        loop Periodic check-in
+            Agent->>Dispatch: HTTPS outbound — "Any messages for me?"
+            Dispatch-->>Agent: None yet
+        end
+    end
+
+    You->>Dispatch: Connect — request session on this instance
+    Dispatch->>Dispatch: Verify IAM permissions
+    Note over Dispatch: Session waiting room<br/>(your request is queued)
+
+    Agent->>Dispatch: HTTPS outbound — check-in
+    Dispatch->>Agent: Someone is waiting —<br/>open a secure line (HTTPS outbound)
+
+    Agent->>Dispatch: HTTPS outbound — encrypted data channel
+
+    rect rgb(240, 255, 240)
+        note over You, Agent: Shell traffic — both sides talk to AWS only
+        loop Terminal session
+            You->>Dispatch: Keyboard input
+            Dispatch->>Agent: Relay commands
+            Agent->>Dispatch: Command output
+            Dispatch->>You: Relay output
+        end
+    end
+```
 
 So: **you** initiate the *request* (through AWS's control interface). The **instance** initiates the *network connections* (outbound to AWS). Both are true.
 
@@ -168,5 +204,5 @@ If the "outbound-only but I click Connect" puzzle was nagging you, you're not al
 <!-- Publishing notes
 LinkedIn: copy Part A only; paste Medium URL when live
 Medium: copy from Subtitle through Takeaway; add tags: AWS, Security, DevOps, EC2, Systems Manager
-Optional diagram: box "You" -> "AWS" <- "SSM Agent on instance" (both arrows to AWS only)
+Mermaid sequence diagram included in Part B (Medium supports Mermaid in many editors; export as image if the editor does not render it)
 -->
